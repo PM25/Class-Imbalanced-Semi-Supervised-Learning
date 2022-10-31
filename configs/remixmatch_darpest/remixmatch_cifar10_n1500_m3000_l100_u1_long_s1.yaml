@@ -1,0 +1,68 @@
+# saving & loading of the model
+save_dir: ./saved_models
+save_name: remixmatch_darpest_cifar10_n1500_m3000_l100_u1_long_s1
+ulb_dist_path: ./dist_estimation/cifar10_n1500_m3000_l100_u1_long_s1/darp_estimation.json
+resume: False
+load_path: None
+overwrite: True
+use_tensorboard: True
+
+# training configuration
+alg: remixmatch
+epoch: 1
+num_train_iter: 350000
+num_eval_iter: 500
+batch_size: 64
+eval_batch_size: 1024
+
+alpha: 0.75
+T: 0.5
+ulb_loss_ratio: 1.0
+w_kl: 0.5
+w_match: 1.5
+w_rot: 0.5
+use_da: True
+use_xe: True
+warm_up: 0.015625
+uratio: 1
+ema_m: 0.999
+
+# optimizer configurations
+optim: SGD
+lr: 0.03
+momentum: 0.9
+weight_decay: 0.0005
+amp: False
+
+# backbone net configurations
+net: WideResNet
+net_from_name: False
+depth: 28
+widen_factor: 2
+leaky_slope: 0.1
+dropout: 0.0
+
+# data configurations
+data_dir: ./data
+dataset: cifar10
+train_sampler: RandomSampler
+num_classes: 10
+num_workers: 1
+max_labeled_per_class: 1500
+max_unlabeled_per_class: 3000
+
+# imbalanced data configurations
+imb_type: long
+lb_imb_ratio: 100
+ulb_imb_ratio: 1
+
+# GPU & seed configurations
+seed: 1
+gpu: 0
+
+# multi-GPUs & distrbitued training
+multiprocessing_distributed: False
+world_size: 1
+rank: 0
+dist_url: tcp://127.0.0.1:1009
+dist_backend: nccl

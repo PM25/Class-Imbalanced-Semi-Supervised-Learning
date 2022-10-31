@@ -12,15 +12,16 @@ import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
 
 from utils.train_utils import ce_loss, EMA, Bn_Controller
+from .darp_utils import estimate_pseudo, safe_opt_solver
 from .remixmatch_utils import Get_Scalar, one_hot, mixup_one_target
 
 np.set_printoptions(precision=3, suppress=True, formatter={"float": "{: 0.3f}".format})
 
 
-class ReMixMatch:
+class ReMixMatchDARP:
     def __init__(self, net_builder, num_classes, ema_m, T, lambda_u, w_match, num_eval_iter=1000, tb_log=None, logger=None):
         """
-        class ReMixMatch contains setter of data_loader, optimizer, and model update methods.
+        class ReMixMatchDARP contains setter of data_loader, optimizer, and model update methods.
         Args:
             net_builder: backbone network class (see net_builder in utils.py)
             num_classes: # of label classes
@@ -32,7 +33,7 @@ class ReMixMatch:
             logger: logger (see utils.py)
         """
 
-        super(ReMixMatch, self).__init__()
+        super(ReMixMatchDARP, self).__init__()
 
         # momentum update param
         self.loader = {}
@@ -102,6 +103,7 @@ class ReMixMatch:
             p_target = json.loads(f.read())
             p_target = torch.tensor(p_target["distribution"])
             p_target = p_target.cuda(args.gpu)
+            ulb_dist = p_target * len(self.dset_dict["train_ulb"])
         self.print_fn(f"using p_target: {p_target.cpu().numpy()}")
 
         p_model = None
@@ -110,6 +112,9 @@ class ReMixMatch:
         if args.resume == True:
             eval_dict = self.evaluate(args=args)
             print(eval_dict)
+
+        pseudo_labels = torch.ones((len(self.dset_dict["train_ulb"]), self.num_classes)) / self.num_classes
+        pseudo_refine = torch.ones((len(self.dset_dict["train_ulb"]), self.num_classes)) / self.num_classes
 
         # x_ulb_s1_rot: rotated data, rot_v: rot angles
         for (_, x_lb, y_lb), (x_ulb_idx, x_ulb_w, x_ulb_s1, x_ulb_s2, x_ulb_s1_rot, rot_v) in zip(
@@ -162,6 +167,20 @@ class ReMixMatch:
 
                     sharpen_prob_x_ulb = prob_x_ulb ** (1 / T)
                     sharpen_prob_x_ulb = (sharpen_prob_x_ulb / sharpen_prob_x_ulb.sum(dim=-1, keepdim=True)).detach()
+
+                    # DARP
+                    pseudo_labels[x_ulb_idx, :] = sharpen_prob_x_ulb.detach().cpu()
+
+                    if self.it >= args.darp_warm:
+                        if self.it % args.darp_update_iter == 0:
+                            targets_u, weights_u = estimate_pseudo(ulb_dist, pseudo_labels, self.num_classes, args.darp_alpha)
+                            scale_term = targets_u * weights_u.reshape(1, -1)
+                            pseudo_orig_rm_noise = (pseudo_labels * scale_term + 1e-6) / (pseudo_labels * scale_term + 1e-6).sum(
+                                dim=1, keepdim=True
+                            )
+                            pseudo_refine = safe_opt_solver(pseudo_orig_rm_noise, ulb_dist, args.darp_iter, args.darp_tol)
+
+                        sharpen_prob_x_ulb = pseudo_refine[x_ulb_idx].detach().cuda(args.gpu)
 
                     # mix up
                     mixed_inputs = torch.cat((x_lb, x_ulb_s1, x_ulb_s2, x_ulb_w))
