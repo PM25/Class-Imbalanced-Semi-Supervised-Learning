@@ -1,0 +1,53 @@
+# saving path
+save_model_path: ./saved_models/shiftestimator_stl10_n450_l10_long_s1
+save_estimation_path: ./dist_estimation/stl10_n450_l10_long_s1
+save_model: True
+overwrite: False
+
+# training configuration
+num_train_iter: 16000
+num_eval_iter: 1600
+batch_size: 64
+eval_batch_size: 1024
+ema_m: 0.999
+use_mixup_drw: True
+drw_warm: 0.75
+
+# optimizer configurations
+optim: SGD
+lr: 0.03
+momentum: 0.9
+weight_decay: 0.0005
+amp: False
+
+# backbone net configurations
+net: WideResNet
+net_from_name: False
+depth: 28
+widen_factor: 2
+leaky_slope: 0.1
+dropout: 0.0
+
+# data configurations
+data_dir: ./data
+dataset: stl10
+train_sampler: RandomSampler
+num_classes: 10
+num_workers: 1
+max_labeled_per_class: 450
+max_unlabeled_per_class: -1
+num_val_per_class: 5
+
+# imbalanced settings
+imb_type: long
+lb_imb_ratio: 10
+ulb_imb_ratio: -1
+
+# label shift estimation
+lse_algs: [BBSE, RLLS, MLLS]
+calibrations: [None, BCTS]
+num_ensemble: 10
+
+# GPU & seed configurations
+seed: 1
+gpu: 0
