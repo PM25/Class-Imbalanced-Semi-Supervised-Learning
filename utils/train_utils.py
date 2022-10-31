@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.tensorboard import SummaryWriter
 
-from custom_writer import CustomWriter
+from .custom_writer import CustomWriter
 
 
 class TBLog:

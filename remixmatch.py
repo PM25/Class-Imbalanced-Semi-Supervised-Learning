@@ -14,8 +14,8 @@ import torch.backends.cudnn as cudnn
 from models.remixmatch.remixmatch import ReMixMatch
 from datasets.data_utils import get_data_loader
 from datasets.cissl_dataset import CISSL_Dataset
-from train_utils import TBLog, get_optimizer, get_cosine_schedule_with_warmup
-from utils import net_builder, get_logger, count_parameters, over_write_args_from_file
+from utils.train_utils import TBLog, get_optimizer, get_cosine_schedule_with_warmup
+from utils.utils import net_builder, get_logger, count_parameters, over_write_args_from_file
 
 
 def main(args):

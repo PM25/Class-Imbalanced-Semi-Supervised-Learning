@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 from torch.cuda.amp import autocast, GradScaler
 
-from train_utils import ce_loss, EMA, Bn_Controller
+from utils.train_utils import ce_loss, EMA, Bn_Controller
 from .remixmatch_utils import Get_Scalar, one_hot, mixup_one_target
 
 np.set_printoptions(precision=3, suppress=True, formatter={"float": "{: 0.3f}".format})
