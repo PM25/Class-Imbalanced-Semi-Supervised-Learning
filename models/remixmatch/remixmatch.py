@@ -302,10 +302,12 @@ class ReMixMatch:
         recall = recall_score(y_true, y_pred, average="macro")
         F1 = f1_score(y_true, y_pred, average="macro")
         AUC = roc_auc_score(y_true, y_logits, multi_class="ovo")
-        cf_mat = confusion_matrix(y_true, y_pred, normalize="true")
-        self.print_fn("confusion matrix:\n" + np.array_str(cf_mat))
-        classwise_acc = cf_mat.diagonal()
-        metrics = {f"eval_classes_acc/{c}": classwise_acc[c] for c in range(self.num_classes)}
+        metrics = {}
+        if self.num_classes <= 10:
+            cf_mat = confusion_matrix(y_true, y_pred, normalize="true")
+            self.print_fn("confusion matrix:\n" + np.array_str(cf_mat))
+            classwise_acc = cf_mat.diagonal()
+            metrics.update({f"eval_classes_acc/{c}": classwise_acc[c] for c in range(self.num_classes)})
         metrics.update(
             {
                 "eval/loss": total_loss / total_num,
